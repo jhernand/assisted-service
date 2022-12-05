@@ -55,6 +55,10 @@ type V2UpdateHostInstallProgressParams struct {
 	  In: path
 	*/
 	InfraEnvID strfmt.UUID
+	/*Identifier of the host used for rate limiting.
+	  In: header
+	*/
+	XHostID *strfmt.UUID
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -105,6 +109,10 @@ func (o *V2UpdateHostInstallProgressParams) BindRequest(r *http.Request, route *
 
 	rInfraEnvID, rhkInfraEnvID, _ := route.Params.GetOK("infra_env_id")
 	if err := o.bindInfraEnvID(rInfraEnvID, rhkInfraEnvID, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := o.bindXHostID(r.Header[http.CanonicalHeaderKey("x-host-id")], true, route.Formats); err != nil {
 		res = append(res, err)
 	}
 	if len(res) > 0 {
@@ -191,6 +199,42 @@ func (o *V2UpdateHostInstallProgressParams) bindInfraEnvID(rawData []string, has
 func (o *V2UpdateHostInstallProgressParams) validateInfraEnvID(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("infra_env_id", "path", "uuid", o.InfraEnvID.String(), formats); err != nil {
+		return err
+	}
+	return nil
+}
+
+// bindXHostID binds and validates parameter XHostID from header.
+func (o *V2UpdateHostInstallProgressParams) bindXHostID(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: false
+
+	if raw == "" { // empty values pass all other validations
+		return nil
+	}
+
+	// Format: uuid
+	value, err := formats.Parse("uuid", raw)
+	if err != nil {
+		return errors.InvalidType("x-host-id", "header", "strfmt.UUID", raw)
+	}
+	o.XHostID = (value.(*strfmt.UUID))
+
+	if err := o.validateXHostID(formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateXHostID carries on validations for parameter XHostID
+func (o *V2UpdateHostInstallProgressParams) validateXHostID(formats strfmt.Registry) error {
+
+	if err := validate.FormatOf("x-host-id", "header", "uuid", o.XHostID.String(), formats); err != nil {
 		return err
 	}
 	return nil

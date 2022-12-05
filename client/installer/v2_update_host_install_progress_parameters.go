@@ -89,6 +89,14 @@ type V2UpdateHostInstallProgressParams struct {
 	*/
 	InfraEnvID strfmt.UUID
 
+	/* XHostID.
+
+	   Identifier of the host used for rate limiting.
+
+	   Format: uuid
+	*/
+	XHostID *strfmt.UUID
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -186,6 +194,17 @@ func (o *V2UpdateHostInstallProgressParams) SetInfraEnvID(infraEnvID strfmt.UUID
 	o.InfraEnvID = infraEnvID
 }
 
+// WithXHostID adds the xHostID to the v2 update host install progress params
+func (o *V2UpdateHostInstallProgressParams) WithXHostID(xHostID *strfmt.UUID) *V2UpdateHostInstallProgressParams {
+	o.SetXHostID(xHostID)
+	return o
+}
+
+// SetXHostID adds the xHostId to the v2 update host install progress params
+func (o *V2UpdateHostInstallProgressParams) SetXHostID(xHostID *strfmt.UUID) {
+	o.XHostID = xHostID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *V2UpdateHostInstallProgressParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -215,6 +234,14 @@ func (o *V2UpdateHostInstallProgressParams) WriteToRequest(r runtime.ClientReque
 	// path param infra_env_id
 	if err := r.SetPathParam("infra_env_id", o.InfraEnvID.String()); err != nil {
 		return err
+	}
+
+	if o.XHostID != nil {
+
+		// header param x-host-id
+		if err := r.SetHeaderParam("x-host-id", o.XHostID.String()); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {
