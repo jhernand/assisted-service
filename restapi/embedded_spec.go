@@ -3817,6 +3817,12 @@ func init() {
               "$ref": "#/definitions/error"
             }
           },
+          "410": {
+            "description": "Gone.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
           "500": {
             "description": "Error.",
             "schema": {
@@ -13410,6 +13416,12 @@ func init() {
           },
           "409": {
             "description": "Cluster cannot accept new agents due to its current state.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "410": {
+            "description": "Gone.",
             "schema": {
               "$ref": "#/definitions/error"
             }

@@ -328,6 +328,51 @@ func (o *V2RegisterHostConflict) WriteResponse(rw http.ResponseWriter, producer 
 	}
 }
 
+// V2RegisterHostGoneCode is the HTTP code returned for type V2RegisterHostGone
+const V2RegisterHostGoneCode int = 410
+
+/*
+V2RegisterHostGone Gone.
+
+swagger:response v2RegisterHostGone
+*/
+type V2RegisterHostGone struct {
+
+	/*
+	  In: Body
+	*/
+	Payload *models.Error `json:"body,omitempty"`
+}
+
+// NewV2RegisterHostGone creates V2RegisterHostGone with default headers values
+func NewV2RegisterHostGone() *V2RegisterHostGone {
+
+	return &V2RegisterHostGone{}
+}
+
+// WithPayload adds the payload to the v2 register host gone response
+func (o *V2RegisterHostGone) WithPayload(payload *models.Error) *V2RegisterHostGone {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the v2 register host gone response
+func (o *V2RegisterHostGone) SetPayload(payload *models.Error) {
+	o.Payload = payload
+}
+
+// WriteResponse to the client
+func (o *V2RegisterHostGone) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
+
+	rw.WriteHeader(410)
+	if o.Payload != nil {
+		payload := o.Payload
+		if err := producer.Produce(rw, payload); err != nil {
+			panic(err) // let the recovery middleware deal with this
+		}
+	}
+}
+
 // V2RegisterHostInternalServerErrorCode is the HTTP code returned for type V2RegisterHostInternalServerError
 const V2RegisterHostInternalServerErrorCode int = 500
 

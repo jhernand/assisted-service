@@ -764,6 +764,10 @@ paths:
           description: Error.
           schema:
             $ref: '#/definitions/error'
+        "410":
+          description: Gone.
+          schema:
+            $ref: '#/definitions/error'
         "405":
           description: Method Not Allowed.
           schema:

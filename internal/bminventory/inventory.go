@@ -4950,6 +4950,25 @@ func (b *bareMetalInventory) V2RegisterHost(ctx context.Context, params installe
 	var cluster *common.Cluster
 	var c *models.Cluster
 
+	// If the host has previously been deleted then return a `410 Gone` response. This tells
+	// the client that it should not try to register again.
+	isHostDeleted, err := common.IsHostDeleted(tx, params.NewHostParams.HostID.String())
+	if err != nil {
+		log.WithError(err).Errorf("Failed to check if host %s has been deleted")
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+	if isHostDeleted {
+		err = fmt.Errorf(
+			"host with identifier %s has been permanently deleted, if you need to "+
+				"register it again reboot it so that a new identifier will be "+
+				"assigned",
+			params.NewHostParams.HostID.String(),
+		)
+		return installer.NewV2RegisterHostGone().WithPayload(
+			common.GenerateError(http.StatusGone, err),
+		)
+	}
+
 	// The query for cluster must appear before the host query to avoid potential deadlock
 	cluster, err = b.getBoundClusterForUpdate(tx, infraEnv, params.InfraEnvID, *params.NewHostParams.HostID)
 	if err != nil {

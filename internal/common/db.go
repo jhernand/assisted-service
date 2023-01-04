@@ -273,6 +273,23 @@ func GetHostFromDB(db *gorm.DB, infraEnvId, hostId string) (*Host, error) {
 	return &host, nil
 }
 
+// IsHostDeleted checks if the host with the given identifier has been deleted. For example, we need
+// to know that when a host tries to register so that we can send a `410 Gone` response instead of
+// the typical `404 Not Found`.
+func IsHostDeleted(db *gorm.DB, id string) (result bool, err error) {
+	var count int64
+	err = db.Unscoped().Model(&models.Host{}).
+		Where("id = ?", id).
+		Where("deleted_at is not null").
+		Count(&count).
+		Error
+	if err != nil {
+		return
+	}
+	result = count > 0
+	return
+}
+
 func GetHostFromDBbyHostId(db *gorm.DB, hostId strfmt.UUID) (*Host, error) {
 	var host Host
 
