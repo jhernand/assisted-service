@@ -183,7 +183,7 @@ $ jq -n --arg BUNDLE "$(cat tls-ca-bundle-registry.pem)" --arg SECRET "$(cat pul
 '{
     "pullSecret": $SECRET,
     "additionalTrustBundle": $BUNDLE,
-    "imageContentSources": [
+    "imageDigestSources": [
         {
             "mirrors": [
                 "<mirror_host_name>:<mirror_host_port>/ocp4/openshift4"
