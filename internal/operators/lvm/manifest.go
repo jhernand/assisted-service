@@ -23,17 +23,28 @@ func Manifests(cluster *common.Cluster) (map[string][]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+
+	customManifestsBuffer := &bytes.Buffer{}
 	lvmcluster, err := getLvmCluster()
 	if err != nil {
 		return nil, nil, err
 	}
+	customManifestsBuffer.WriteString("\n---\n")
+	customManifestsBuffer.Write(lvmcluster)
+	setupJob, err := getSetupJob()
+	if err != nil {
+		return nil, nil, err
+	}
+	customManifestsBuffer.WriteString("\n---\n")
+	customManifestsBuffer.Write(setupJob)
+	customManifests := customManifestsBuffer.Bytes()
 
 	openshiftManifests := make(map[string][]byte)
 
 	openshiftManifests["50_openshift-lvm_ns.yaml"] = lvmNamespace
 	openshiftManifests["50_openshift-lvm_operator_group.yaml"] = lvmOperatorGroup
 	openshiftManifests["50_openshift-lvm_subscription.yaml"] = lvmSubscription
-	return openshiftManifests, lvmcluster, nil
+	return openshiftManifests, customManifests, nil
 }
 
 func getSubscriptionInfo(openshiftVersion string) (map[string]string, error) {
@@ -86,6 +97,10 @@ func getLvmCluster() ([]byte, error) {
 		"DEVICE_NAME":        defaultDeviceName,
 	}
 	return executeTemplate(data, "LvmCluster", LvmCluster)
+}
+
+func getSetupJob() ([]byte, error) {
+	return executeTemplate(nil, "SetupJob", setupJobTemplate)
 }
 
 func executeTemplate(data map[string]string, contentName, content string) ([]byte, error) {
@@ -142,3 +157,66 @@ spec:
         name: thin-pool-1
         sizePercent: 90
         overprovisionRatio: 10`
+
+const setupJobTemplate = `
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: assisted-installer
+  name: lvm-setup-1
+  labels:
+    agent-install.openshift.io/setup-job: lvm
+spec:
+  template:
+    spec:
+      serviceAccountName: assisted-installer-controller
+      containers:
+      - name: setup
+        image: quay.io/jhernand/assisted-installer-controller:88
+        command:
+        - sleep
+        - 1s
+      restartPolicy: Never
+
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: assisted-installer
+  name: lvm-setup-2
+  labels:
+    agent-install.openshift.io/setup-job: lvm
+spec:
+  template:
+    spec:
+      serviceAccountName: assisted-installer-controller
+      containers:
+      - name: setup
+        image: quay.io/jhernand/assisted-installer-controller:88
+        command:
+        - sleep
+        - 1m
+      restartPolicy: Never
+
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: assisted-installer
+  name: lvm-setup-3
+  labels:
+    agent-install.openshift.io/setup-job: lvm
+spec:
+  template:
+    spec:
+      serviceAccountName: assisted-installer-controller
+      containers:
+      - name: setup
+        image: quay.io/jhernand/assisted-installer-controller:88
+        command:
+        - sleep
+        - 5m
+      restartPolicy: Never
+`

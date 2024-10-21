@@ -8912,6 +8912,10 @@ func init() {
           "type": "string",
           "pattern": "^(([a-zA-Z0-9\\-\\.]+)(:[0-9]+)?\\/)?[a-z0-9\\._\\-\\/@]+[?::a-zA-Z0-9_\\-.]+$"
         },
+        "controller_role_rules": {
+          "description": "Additional rules to add to the role of the assisted installer controller",
+          "type": "string"
+        },
         "disks_to_format": {
           "description": "List of disks to format",
           "type": "array",
@@ -19705,6 +19709,10 @@ func init() {
           "description": "Assisted installer controller image",
           "type": "string",
           "pattern": "^(([a-zA-Z0-9\\-\\.]+)(:[0-9]+)?\\/)?[a-z0-9\\._\\-\\/@]+[?::a-zA-Z0-9_\\-.]+$"
+        },
+        "controller_role_rules": {
+          "description": "Additional rules to add to the role of the assisted installer controller",
+          "type": "string"
         },
         "disks_to_format": {
           "description": "List of disks to format",

@@ -38,6 +38,9 @@ type InstallCmdRequest struct {
 	// Pattern: ^(([a-zA-Z0-9\-\.]+)(:[0-9]+)?\/)?[a-z0-9\._\-\/@]+[?::a-zA-Z0-9_\-.]+$
 	ControllerImage *string `json:"controller_image"`
 
+	// Additional rules to add to the role of the assisted installer controller
+	ControllerRoleRules string `json:"controller_role_rules,omitempty"`
+
 	// List of disks to format
 	DisksToFormat []string `json:"disks_to_format"`
 

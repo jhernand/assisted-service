@@ -28,11 +28,29 @@ func generateStorageClusterManifest(StorageClusterManifest string, odfDiskCounts
 
 }
 
+func generateSetDefaultStorageClassJobManifest() (result []byte, err error) {
+	tmpl, err := template.New("").Parse(setDefaultStorageClassJobTemplate)
+	if err != nil {
+		return
+	}
+	buffer := &bytes.Buffer{}
+	err = tmpl.Execute(buffer, nil)
+	if err != nil {
+		return
+	}
+	result = buffer.Bytes()
+	return
+}
+
 func Manifests(odfConfig *Config, openshiftVersion string) (map[string][]byte, []byte, error) {
 	openshiftManifests := make(map[string][]byte)
-	var odfSC []byte
 	var err error
 
+	// Prepare a buffer for the custom manifests:
+	customManifestsBuffer := &bytes.Buffer{}
+
+	// Add the storage cluster to the custom manifests:
+	var odfSC []byte
 	if odfConfig.ODFDeploymentType == compactMode {
 		odfSC, err = generateStorageClusterManifest(ocsMinDeploySC, odfConfig.ODFDisksAvailable)
 		if err != nil {
@@ -44,6 +62,20 @@ func Manifests(odfConfig *Config, openshiftVersion string) (map[string][]byte, [
 			return nil, nil, err
 		}
 	}
+	customManifestsBuffer.WriteString("\n---\n")
+	customManifestsBuffer.Write(odfSC)
+
+	// Add the job that sets the default storage class to the custom manifests:
+	setDefaultStorageClassJob, err := generateSetDefaultStorageClassJobManifest()
+	if err != nil {
+		return nil, nil, err
+	}
+	customManifestsBuffer.WriteString("\n---\n")
+	customManifestsBuffer.Write(setDefaultStorageClassJob)
+
+	// Get the bytes of the custom manifests:
+	customManifests := customManifestsBuffer.Bytes()
+
 	//Check if OCP version is 4.8.x if yes, then return manifests for OCS
 	v1, er := version.NewVersion(openshiftVersion)
 	if er != nil {
@@ -61,7 +93,7 @@ func Manifests(odfConfig *Config, openshiftVersion string) (map[string][]byte, [
 		}
 		openshiftManifests["50_openshift-ocs_subscription.yaml"] = []byte(ocsSubscription)
 		openshiftManifests["50_openshift-ocs_operator_group.yaml"] = []byte(odfOperatorGroup)
-		return openshiftManifests, odfSC, nil
+		return openshiftManifests, customManifests, nil
 	}
 
 	//If OCP version is >=4.9 then return manifests for ODF
@@ -71,9 +103,8 @@ func Manifests(odfConfig *Config, openshiftVersion string) (map[string][]byte, [
 		return map[string][]byte{}, []byte{}, err
 	}
 	openshiftManifests["50_openshift-odf_subscription.yaml"] = []byte(odfSubscription)
-	openshiftManifests["50_openshift-odf_operator_group.yaml"] = []byte(odfOperatorGroup)
-	odfSC = append([]byte(odfStorageSystem+"\n---\n"), odfSC...)
-	return openshiftManifests, odfSC, nil
+	openshiftManifests["50_openshift-odf_opera.yaml"] = []byte(odfOperatorGroup)
+	return openshiftManifests, customManifests, nil
 }
 
 func ocsSubscription() (string, error) {
@@ -339,4 +370,28 @@ spec:
     portable: false
 
     replica: 1
+`
+
+const setDefaultStorageClassJobTemplate = `
+apiVersion: batch/v1
+kind: Job
+metadata:
+  namespace: assisted-installer
+  name: set-default-storage-class
+  labels:
+    assisted-installer-setup-job: ""
+spec:
+  template:
+    spec:
+      serviceAccountName: assisted-installer-controller
+      containers:
+      - name: set-default-storage-class
+        image: quay.io/jhernand/assisted-installer-controller:88
+        command:
+        - /usr/bin/oc
+        - annotate
+        - storageclass
+        - ocs-storagecluster-ceph-rbd
+        - storageclass.kubernetes.io/is-default-class=true
+      restartPolicy: Never
 `
